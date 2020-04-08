@@ -1,5 +1,12 @@
 const express = require('express');
 
+//routers
+
+
+//server.use functions
+
+//endpoints
+
 const server = express();
 
 server.get('/', (req, res) => {
