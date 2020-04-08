@@ -1,155 +1,139 @@
-const express = require('express');
-const userDB  = require('userDB.js');
-const postDB = require('../posts/postDb');
+const express = require("express");
+
+const userDB = require("./userDb.js");
+
+const postDB = require("../posts/postDb");
 
 const router = express.Router();
 
-router.post('/', validateUser,(req, res) => {
-  // do your magic!
+router.post("/", validateUser, (req, res) => {
   userDB.insert(req.body)
     .then(user => {
       res.status(200).json(user);
     })
-      .catch(err => {
-        res.status(500).json({message: "User could not be added"});
-      });
+    .catch(err => {
+      res.status(500).json({ message: "User could not be added." });
+    });
 });
 
-router.post('/:id/posts', validateUserId, validatePost, (req, res) => {
+router.post("/:id/posts", validatePost, validateUserId, (req, res) => {
   // do your magic!
-  postDB.insert({...req.body, user_id: req.params.id})
+  postDB.insert({ ...req.body, user_id: req.params.id })
     .then(post => {
       res.status(201).json(post);
     })
-      .catch(err => {
-        console.log(err);
-        res.status(500).json({errorMessage: "Could not create post"});
-      });
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ errorMessage: "Could not create post." });
+    });
 });
 
+//GET /////////////////////////////
 
-////////////////// GET /////////////////////
-router.get('/', (req, res) => {
+router.get("/", (req, res) => {
   // do your magic!
-  userDB.get()
+  postDB.get()
     .then(users => {
       res.status(200).json(users);
     })
-      .catch(err => {
-        console.log(err)
-        res.status(500).json({errorMessage:"Could not retrieve user list."})
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ error: "Could not get the user list." });
+    });
+});
+
+router.get("/:id", validateUserId, (req, res) => {
+  // do your magic!
+  req.user ? res.status(200).json(req.user): res.status(500).json({
+        message: "Could not retrieve that user."
       });
 });
 
-router.get('/:id',validateUserId, (req, res) => {
+router.get("/:id/posts", (req, res) => {
   // do your magic!
-  const id = req.params.id;
-
-  userDB.getById(id)
-    .then(user =>{
-      res.status(200).json(user);
-    })
-      .catch(err => {
-        res.status(500).json({message: "Could not retrieve that user."});
-      });
-});
-
-router.get('/:id/posts', (req, res) => {
-  // do your magic!
-  const id = req.params.id;
-
-  userDB.getUserPosts(id)
+  userDB.getUserPosts(req.params.id)
     .then(posts => {
       res.status(200).json(posts);
     })
-      .catch(err => {
-        res.status(500).json({message: "Could not retrieve any posts for that user."});
-      });
-});
-//////////////////////////////////////////
-
-
-router.delete('/:id', validateUserId, (req, res) => {
-  // do your magic!
-  const id = req.params.id;
-
-  userDB.remove(id)
-    .then(deletedUser => {
-      if(deletedUser === 1) {
-        res.status(200).json({message: `User with ID of ${id} is now gone forever.`})
-      }else{
-        res.status(500).json({message: "Error - could not delete user."})
-      }
-    })
-      res.status(500).json({message:"Server could not delete user." })
-
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ errorMessage: "Could not get that users posts" });
+    });
 });
 
-router.put('/:id',validateUser, validateUserId, (req, res) => {
-  // do your magic!
+/////////////////////////////////////////
+
+router.put('/:id', validateUserId, validateUser, (req, res) => {
   const id = req.params.id
   
   userDB.update(id, req.body)
-  .then(updateUser => {
+  .then(userUpdate => {
     userDB.getById(id)
         .then(user => {
-          if (updateUser === 1){ 
-            res.status(200).json(user);
-          } else {
-            res.status(500).json({ message: "Could not update user."});
+          if (userUpdate === 1){ 
+            res.status(200).json(user)
+          }else{
+            res.status(417).json({ message: "Something went wrong - user was not updated."})
             }
           })
-            .catch(err => {
-            res.status(500).json({ message: "Error while trying to modify the user in the database.", err})
-          });
-    })
+          .catch(err => {
+            res.status(500).json({ message: "Server error while trying to update the user.", err})
+          })
+    });
 });
+
+router.delete("/:id", validateUserId, (req, res) => {
+  // do your magic!
+  userDB.remove(req.params.id)
+    .then(user => {
+      res.status(200).json(user);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ errorMessage: "Error trying to delete the user." });
+    });
+});
+
 
 //custom middleware
 
 function validateUserId(req, res, next) {
   // do your magic!
- const id = req.params.id;
- console.log(id);
- userDB.getById(id)
-  .then(user => {
-    if(user){
-      req.user = user;
-
-      next();
-    }else{
-      res.status(400).json({error: "Invalid user id."});
-    }
-  })
-    .catch(error => {
-      console.log(error);
-      res.status(500).json({error:"Server could not validate user id."});
+  userDB.getById(req.params.id)
+    .then(user => {
+      if (user) {
+        req.user = user;
+        next();
+      } else {
+        res.status(400).json({ message: "invalid user id" });
+      }
     })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ message: "There was an error" });
+    });
 }
 
 function validateUser(req, res, next) {
-  // do your magic!
-  if(req.body){
-    if(req.body.name){
+  if (req.body) {
+    if (req.body.name) {
       next();
-    }else{
-      res.status(400).json({message: "Missing requred name filed."});
+    } else {
+      res.status(400).json({ message: "Missing name" });
     }
-  }else{
-    res.status(400).json({message: "Missing user data"});
+  } else {
+    res.status(400).json({ message: "Missing user data" });
   }
 }
-
 function validatePost(req, res, next) {
-  // do your magic!
-  if(req.body){
-    if(req.body.text){
+  if (req.body) {
+    if (req.body.text) {
       next();
-    }else{
-      res.status(400).json({message: "Missing required text field"});
+    } else {
+      res.status(400).json({ message: "Missing required text field" });
     }
-  }else{
-    res.status(400).json({message: "Missing post data."});
+  } else {
+    res.status(400).json({ message: "Missing post data" });
   }
 }
 
