@@ -4,11 +4,12 @@
   "description": "Node API 3 Project",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js"
     "server": "nodemon index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LambdaSchool/node-api3-project.git"
+    "url": "git+https://github.com/JWNicholson/webapi-i-challenge.git"
   },
   "keywords": [
     "node",
@@ -19,7 +20,7 @@
   ],
   "author": "Lambda School",
   "bugs": {
-    "url": "https://github.com/LambdaSchool/node-api3-project/issues"
+    "url": "https://github.com/JWNicholson/webapi-i-challenge.git"
   },
   "homepage": "https://github.com/LambdaSchool/node-api3-project#readme",
   "dependencies": {
